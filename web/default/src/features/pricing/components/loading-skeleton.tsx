@@ -105,31 +105,33 @@ function FilterBarSkeleton() {
 function TableContentSkeleton() {
   const columns = [
     { width: 200 },
+    { width: 72 },
+    { width: 168 },
     { width: 100 },
     { width: 100 },
+    { width: 88 },
+    { width: 120 },
     { width: 100 },
-    { width: 80 },
     { width: 100 },
+    { width: 90 },
   ]
 
   return (
     <div className='space-y-4'>
-      <div className='overflow-hidden rounded-lg border'>
-        <div className='bg-muted/30 border-b px-4 py-3'>
-          <div className='flex items-center gap-4'>
-            {columns.map((col, i) => (
-              <Skeleton
-                key={i}
-                className='h-4'
-                style={{ width: `${col.width}px` }}
-              />
-            ))}
-          </div>
+      <div className='overflow-x-auto'>
+        <div className='bg-muted/30 flex h-12 items-center gap-4 border-b px-4'>
+          {columns.map((col, i) => (
+            <Skeleton
+              key={i}
+              className='h-4'
+              style={{ width: `${col.width}px` }}
+            />
+          ))}
         </div>
         {Array.from({ length: 10 }).map((_, i) => (
           <div
             key={i}
-            className='flex items-center gap-4 border-b px-4 py-3 last:border-b-0'
+            className='flex h-12 items-center gap-4 border-b px-4 last:border-b-0'
           >
             {columns.map((col, j) => (
               <Skeleton

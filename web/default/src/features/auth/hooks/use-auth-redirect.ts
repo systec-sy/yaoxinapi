@@ -86,7 +86,7 @@ export function useAuthRedirect() {
     }
 
     // Navigate to target page
-    const targetPath = redirectTo || '/dashboard'
+    const targetPath = redirectTo || '/keys'
     navigate({ to: targetPath, replace: true })
   }
 
@@ -98,7 +98,7 @@ export function useAuthRedirect() {
   }
 
   /**
-   * Redirect to login page
+   * Redirect to login page. Optional `redirectAfterLogin` becomes `?redirect=` after sign-in.
    */
   const redirectToLogin = () => {
     navigate({ to: '/sign-in', replace: true })

@@ -52,6 +52,7 @@ import {
 } from '@/features/performance-metrics/lib/format'
 import { DEFAULT_TOKEN_UNIT, QUOTA_TYPE_VALUES } from '../constants'
 import { usePricingData } from '../hooks/use-pricing-data'
+import { isDomesticPricingModel } from '../lib/domestic-pricing-vendors'
 import {
   getDynamicPriceEntries,
   getDynamicPricingSummary,
@@ -678,7 +679,7 @@ function GroupPricingSection(props: {
       new Map(
         dynamicTiers
           .flatMap((tier) =>
-            getDynamicPriceEntries(tier, {
+            getDynamicPriceEntries(tier, props.model, {
               tokenUnit: props.tokenUnit,
               showRechargePrice,
               priceRate: props.priceRate,
@@ -722,7 +723,7 @@ function GroupPricingSection(props: {
                     </TableHeader>
                     <TableBody>
                       {dynamicTiers.map((tier, tierIndex) => {
-                        const entries = getDynamicPriceEntries(tier, {
+                        const entries = getDynamicPriceEntries(tier, props.model, {
                           tokenUnit: props.tokenUnit,
                           showRechargePrice,
                           priceRate: props.priceRate,
@@ -920,7 +921,7 @@ export function ModelDetailsContent(props: ModelDetailsContentProps) {
       <ModelHeader model={props.model} />
 
       <Tabs defaultValue='overview' className='gap-4'>
-        <TabsList className='bg-muted/60 h-auto w-full justify-start gap-1 overflow-x-auto rounded-lg p-1'>
+        <TabsList className='bg-muted/60 h-auto w-full justify-start gap-1 overflow-x-auto overflow-y-hidden rounded-lg px-1 pt-1 pb-1.5'>
           {TAB_VALUES.map((value) => {
             const Icon = TAB_META[value].icon
             return (

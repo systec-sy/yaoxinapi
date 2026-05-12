@@ -20,6 +20,17 @@ import z from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
 import { ModelDetails } from '@/features/pricing/components/model-details'
 
+const contextMinValues = [
+  'all',
+  '4k',
+  '8k',
+  '32k',
+  '64k',
+  '128k',
+  '200k',
+  '1m',
+] as const
+
 const modelDetailsSearchSchema = z.object({
   search: z.string().optional(),
   sort: z.string().optional(),
@@ -28,6 +39,8 @@ const modelDetailsSearchSchema = z.object({
   quotaType: z.string().optional(),
   endpointType: z.string().optional(),
   tag: z.string().optional(),
+  modalities: z.string().optional(),
+  contextMin: z.enum(contextMinValues).optional(),
   tokenUnit: z.enum(['M', 'K']).optional(),
   view: z.enum(['card', 'table']).optional().catch(undefined),
   rechargePrice: z.boolean().optional(),

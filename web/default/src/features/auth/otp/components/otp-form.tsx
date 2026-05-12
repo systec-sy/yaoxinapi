@@ -115,7 +115,8 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
       }
 
       toast.success(t('Signed in'))
-      redirectToLogin() // This will redirect to dashboard via the redirect logic
+      // Bounce via /sign-in beforeLoad → default post-login is /keys
+      redirectToLogin()
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('2FA verification error:', error)

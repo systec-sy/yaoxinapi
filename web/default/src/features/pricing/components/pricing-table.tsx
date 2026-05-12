@@ -93,16 +93,19 @@ export function PricingTable(props: PricingTableProps) {
 
   return (
     <div className='space-y-4'>
-      <div className='overflow-hidden rounded-lg border'>
+      <div className='overflow-x-auto'>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow
+                key={headerGroup.id}
+                className='hover:bg-transparent h-12'
+              >
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     style={{ width: header.getSize() }}
-                    className='text-muted-foreground text-[10px] font-medium tracking-wider uppercase'
+                    className='text-muted-foreground h-12 py-0 text-[10px] font-medium tracking-wider uppercase'
                   >
                     {header.isPlaceholder
                       ? null
@@ -117,7 +120,12 @@ export function PricingTable(props: PricingTableProps) {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableSkeleton table={table} keyPrefix='pricing-skeleton' />
+              <TableSkeleton
+                table={table}
+                keyPrefix='pricing-skeleton'
+                rowHeight='h-12'
+                cellClassName='py-2'
+              />
             ) : table.getRowModel().rows.length === 0 ? (
               <TableEmpty
                 colSpan={columns.length}
@@ -129,10 +137,10 @@ export function PricingTable(props: PricingTableProps) {
                 <TableRow
                   key={row.id}
                   onClick={() => handleRowClick(row.original)}
-                  className='hover:bg-muted/30 cursor-pointer transition-colors'
+                  className='hover:bg-muted/30 h-12 cursor-pointer transition-colors'
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className='h-12 py-0 align-middle'>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

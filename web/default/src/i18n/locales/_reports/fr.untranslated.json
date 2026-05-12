@@ -1,3 +1,7 @@
 {
   "Each tier supports up to 2 conditions. The last tier without conditions is the fallback.": "Each tier supports up to 2 conditions. The last tier without conditions is the fallback."
+  "No need to integrate each vendor separately. One unified entry gives you all mainstream models, ready out of the box.": "No need to integrate each vendor separately. One unified entry gives you all mainstream models, ready out of the box.",
+  "The gateway runs at the edge for nearby inference with lower latency. Without hurting responsiveness, it automatically prefers high-value models.": "The gateway runs at the edge for nearby inference with lower latency. Without hurting responsiveness, it automatically prefers high-value models.",
+  "Fine-grained routing rules ensure every request only reaches models and providers you authorize. Meets enterprise security and privacy requirements.": "Fine-grained routing rules ensure every request only reaches models and providers you authorize. Meets enterprise security and privacy requirements.",
+  "When any model provider fails, the system automatically switches to backup channels. Distributed infrastructure keeps your business always available.": "When any model provider fails, the system automatically switches to backup channels. Distributed infrastructure keeps your business always available."
 }

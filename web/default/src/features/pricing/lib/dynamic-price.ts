@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { formatBillingCurrencyFromUSD } from '@/lib/currency'
 import { TOKEN_UNIT_DIVISORS } from '../constants'
+import { isDomesticPricingModel } from './domestic-pricing-vendors'
+import { formatPricingCurrencyAmount } from './pricing-currency-display'
 import type { PricingModel, TokenUnit } from '../types'
 import {
   BILLING_PRICING_VARS,
@@ -91,6 +93,7 @@ function applyRechargeRate(
 }
 
 export function formatDynamicUnitPrice(
+  model: PricingModel,
   valuePerMillionTokens: number,
   options: DynamicPriceOptions
 ): string {
@@ -107,11 +110,15 @@ export function formatDynamicUnitPrice(
     usdExchangeRate
   )
 
-  return formatBillingCurrencyFromUSD(displayPrice, {
-    digitsLarge: 4,
-    digitsSmall: 6,
-    abbreviate: false,
-  })
+  return formatPricingCurrencyAmount(
+    displayPrice,
+    isDomesticPricingModel(model),
+    {
+      digitsLarge: 4,
+      digitsSmall: 6,
+      abbreviate: false,
+    }
+  )
 }
 
 export function getDynamicPricingTiers(model: PricingModel): ParsedTier[] {
@@ -132,6 +139,7 @@ export function hasDynamicRequestRules(model: PricingModel): boolean {
 
 export function getDynamicPriceEntries(
   tier: ParsedTier | null,
+  model: PricingModel,
   options: DynamicPriceOptions
 ): DynamicPriceEntry[] {
   if (!tier) return []
@@ -148,7 +156,7 @@ export function getDynamicPriceEntries(
         label: variable.label,
         shortLabel: variable.shortLabel,
         value,
-        formatted: formatDynamicUnitPrice(value, options),
+        formatted: formatDynamicUnitPrice(model, value, options),
         variable,
       },
     ]
@@ -168,7 +176,7 @@ export function getDynamicPricingSummary(
 
   const tiers = getDynamicPricingTiers(model)
   const tier = tiers[0] || null
-  const entries = getDynamicPriceEntries(tier, options)
+  const entries = getDynamicPriceEntries(tier, model, options)
   const rawExpression = model.billing_expr || ''
 
   return {

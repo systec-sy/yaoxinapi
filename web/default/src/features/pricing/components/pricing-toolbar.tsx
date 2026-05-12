@@ -43,11 +43,14 @@ import {
 import {
   VIEW_MODES,
   getSortLabels,
+  type ContextMinFilterKey,
   type SortOption,
   type ViewMode,
 } from '../constants'
-import type { PricingModel, PricingVendor, TokenUnit } from '../types'
+import type { ModelMetadata } from '../lib/model-metadata'
+import type { Modality, PricingModel, PricingVendor } from '../types'
 import { PricingSidebar } from './pricing-sidebar'
+import { SearchBar } from './search-bar'
 
 type SegmentOption = {
   value: string
@@ -57,14 +60,14 @@ type SegmentOption = {
 }
 
 export interface PricingToolbarProps {
+  searchValue: string
+  onSearchChange: (value: string) => void
+  onSearchClear: () => void
+  searchPlaceholder?: string
   filteredCount: number
   totalCount?: number
   sortBy: string
   onSortChange: (value: string) => void
-  tokenUnit: TokenUnit
-  onTokenUnitChange: (value: TokenUnit) => void
-  showRechargePrice: boolean
-  onRechargePriceChange: (value: boolean) => void
   viewMode: ViewMode
   onViewModeChange: (value: ViewMode) => void
   quotaTypeFilter: string
@@ -82,9 +85,87 @@ export interface PricingToolbarProps {
   groupRatios?: Record<string, number>
   tags: string[]
   models: PricingModel[]
+  metadataByName: Map<string, ModelMetadata>
+  selectedModalities: Modality[]
+  onModalityToggle: (m: Modality) => void
+  contextMinFilter: ContextMinFilterKey
+  onContextMinChange: (k: ContextMinFilterKey) => void
   hasActiveFilters: boolean
   activeFilterCount: number
   onClearFilters: () => void
+}
+
+/** Matches {@link SearchBar} input (`h-10`). */
+const TOOLBAR_CONTROL_H = 'h-10 min-h-10'
+
+function SortViewCluster(props: {
+  sortLabels: ReturnType<typeof getSortLabels>
+  sortBy: string
+  onSortChange: (value: string) => void
+  viewMode: ViewMode
+  onViewModeChange: (value: string) => void
+  className?: string
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <div className={cn('flex shrink-0 items-center gap-2', props.className)}>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              type='button'
+              variant='outline'
+              className={cn(
+                TOOLBAR_CONTROL_H,
+                'gap-1.5 bg-background px-3 text-sm shadow-xs'
+              )}
+            />
+          }
+        >
+          <ArrowUpDown className='size-3.5' />
+          <span>
+            {props.sortLabels[props.sortBy as SortOption] || t('Sort')}
+          </span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align='end' className='w-48'>
+          {Object.entries(props.sortLabels).map(([value, label]) => (
+            <DropdownMenuItem
+              key={value}
+              onClick={() => props.onSortChange(value)}
+              className='gap-2'
+            >
+              <Check
+                className={cn(
+                  'size-4 shrink-0',
+                  props.sortBy === value ? 'opacity-100' : 'opacity-0'
+                )}
+              />
+              {label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <SegmentedControl
+        options={[
+          {
+            value: VIEW_MODES.CARD,
+            icon: Grid2X2,
+            tooltip: t('Card view'),
+          },
+          {
+            value: VIEW_MODES.TABLE,
+            icon: Table2,
+            tooltip: t('Table view'),
+          },
+        ]}
+        value={props.viewMode}
+        onChange={props.onViewModeChange}
+        ariaLabel={t('View mode')}
+      />
+    </div>
+  )
 }
 
 function SegmentedControl(props: {
@@ -97,7 +178,7 @@ function SegmentedControl(props: {
     <div
       role='group'
       aria-label={props.ariaLabel}
-      className='bg-muted/60 inline-flex h-8 items-center rounded-lg border p-0.5'
+      className='bg-muted/60 inline-flex h-10 items-center rounded-lg border p-0.5'
     >
       {props.options.map((option) => {
         const Icon = option.icon
@@ -109,8 +190,8 @@ function SegmentedControl(props: {
             onClick={() => props.onChange(option.value)}
             aria-pressed={isActive}
             className={cn(
-              'inline-flex h-full items-center justify-center rounded-md text-xs font-medium transition-all',
-              Icon && !option.label ? 'w-7' : 'gap-1.5 px-3',
+              'inline-flex h-full min-h-0 items-center justify-center rounded-md text-xs font-medium transition-all',
+              Icon && !option.label ? 'w-9' : 'gap-1.5 px-3',
               isActive
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -143,126 +224,112 @@ export function PricingToolbar(props: PricingToolbarProps) {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const sortLabels = getSortLabels(t)
 
-  const handleTokenUnitChange = useCallback(
-    (value: string) => props.onTokenUnitChange(value as TokenUnit),
-    [props]
-  )
-
   const handleViewModeChange = useCallback(
     (value: string) => props.onViewModeChange(value as ViewMode),
     [props]
   )
 
-  const handleRechargePriceChange = useCallback(
-    (value: string) => props.onRechargePriceChange(value === 'recharge'),
-    [props]
+  const modelCount = (
+    <div className='text-muted-foreground flex items-baseline gap-1 text-sm'>
+      <span className='text-foreground font-semibold tabular-nums'>
+        {props.filteredCount.toLocaleString()}
+      </span>
+      <span>{props.filteredCount === 1 ? t('model') : t('models')}</span>
+      {props.hasActiveFilters && props.totalCount && (
+        <span className='text-muted-foreground/60 text-xs'>
+          / {props.totalCount.toLocaleString()}
+        </span>
+      )}
+    </div>
   )
 
   return (
-    <div className='rounded-xl border p-3'>
-      <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-        <div className='flex items-center gap-2'>
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            onClick={() => setMobileFiltersOpen(true)}
-            className='gap-1.5 xl:hidden'
-          >
-            <Filter className='size-4' />
-            {t('Filter')}
-            {props.activeFilterCount > 0 && (
-              <Badge className='ml-0.5 size-5 justify-center p-0 text-[10px]'>
-                {props.activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-
-          <div className='text-muted-foreground flex items-baseline gap-1 text-sm'>
-            <span className='text-foreground font-semibold tabular-nums'>
-              {props.filteredCount.toLocaleString()}
-            </span>
-            <span>{props.filteredCount === 1 ? t('model') : t('models')}</span>
-            {props.hasActiveFilters && props.totalCount && (
-              <span className='text-muted-foreground/60 text-xs'>
-                / {props.totalCount.toLocaleString()}
-              </span>
-            )}
+    <div className='rounded-xl'>
+      <div className='flex flex-col gap-3 lg:hidden'>
+        <div className='flex w-full min-w-0 items-center justify-between gap-2'>
+          <div className='text-foreground flex min-w-0 flex-1 flex-row flex-wrap items-center gap-2'>
+            <h2 className='shrink-0 text-2xl font-semibold tracking-tight'>
+              {t('Model Square')}
+            </h2>
+            {modelCount}
+          </div>
+          <div className='flex shrink-0 items-center gap-1'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => setMobileFiltersOpen(true)}
+              className={cn(TOOLBAR_CONTROL_H, 'gap-1.5 px-3 xl:hidden')}
+            >
+              <Filter className='size-4' />
+              {t('Filter')}
+              {props.activeFilterCount > 0 && (
+                <Badge className='ml-0.5 size-5 justify-center rounded-full p-0 text-[10px]'>
+                  {props.activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+            <SortViewCluster
+              sortLabels={sortLabels}
+              sortBy={props.sortBy}
+              onSortChange={props.onSortChange}
+              viewMode={props.viewMode}
+              onViewModeChange={handleViewModeChange}
+            />
           </div>
         </div>
 
-        <div className='flex flex-wrap items-center gap-2'>
-          <div className='hidden items-center gap-2 sm:flex'>
-            <SegmentedControl
-              options={[
-                { value: 'standard', label: t('Standard') },
-                { value: 'recharge', label: t('Recharge') },
-              ]}
-              value={props.showRechargePrice ? 'recharge' : 'standard'}
-              onChange={handleRechargePriceChange}
-              ariaLabel={t('Price display mode')}
-            />
-            <SegmentedControl
-              options={[
-                { value: 'M', label: '/1M' },
-                { value: 'K', label: '/1K' },
-              ]}
-              value={props.tokenUnit}
-              onChange={handleTokenUnitChange}
-              ariaLabel={t('Token unit')}
+        <SearchBar
+          value={props.searchValue}
+          onChange={props.onSearchChange}
+          onClear={props.onSearchClear}
+          placeholder={props.searchPlaceholder}
+          className='w-full min-w-0'
+        />
+      </div>
+
+      <div className='hidden gap-x-4 gap-y-3 lg:flex lg:flex-wrap lg:items-center lg:justify-between'>
+        <div className='text-foreground flex min-w-0 shrink-0 flex-row flex-wrap items-center gap-2'>
+          <h2 className='text-2xl font-semibold tracking-tight lg:text-2xl'>
+            {t('Model Square')}
+          </h2>
+          {modelCount}
+        </div>
+
+        {/* Search + filter/sort/view: compact group aligned to the right; wraps below title as one unit */}
+        <div className='flex max-w-full shrink-0 flex-wrap items-center justify-end gap-2 lg:ml-auto'>
+          <SearchBar
+            value={props.searchValue}
+            onChange={props.onSearchChange}
+            onClear={props.onSearchClear}
+            placeholder={props.searchPlaceholder}
+            className='w-[380px] max-w-full shrink-0'
+          />
+          <div className='flex shrink-0 items-center gap-1'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => setMobileFiltersOpen(true)}
+              className={cn(
+                TOOLBAR_CONTROL_H,
+                'hidden shrink-0 gap-1.5 px-3 lg:inline-flex xl:hidden'
+              )}
+            >
+              <Filter className='size-4' />
+              {t('Filter')}
+              {props.activeFilterCount > 0 && (
+                <Badge className='ml-0.5 size-5 justify-center rounded-full p-0 text-[10px]'>
+                  {props.activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+            <SortViewCluster
+              sortLabels={sortLabels}
+              sortBy={props.sortBy}
+              onSortChange={props.onSortChange}
+              viewMode={props.viewMode}
+              onViewModeChange={handleViewModeChange}
             />
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  className='h-8 gap-1.5 px-3 text-xs'
-                />
-              }
-            >
-              <ArrowUpDown className='size-3.5' />
-              <span>{sortLabels[props.sortBy as SortOption] || t('Sort')}</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-44'>
-              {Object.entries(sortLabels).map(([value, label]) => (
-                <DropdownMenuItem
-                  key={value}
-                  onClick={() => props.onSortChange(value)}
-                  className='gap-2'
-                >
-                  <Check
-                    className={cn(
-                      'size-4 shrink-0',
-                      props.sortBy === value ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
-                  {label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <SegmentedControl
-            options={[
-              {
-                value: VIEW_MODES.CARD,
-                icon: Grid2X2,
-                tooltip: t('Card view'),
-              },
-              {
-                value: VIEW_MODES.TABLE,
-                icon: Table2,
-                tooltip: t('Table view'),
-              },
-            ]}
-            value={props.viewMode}
-            onChange={handleViewModeChange}
-            ariaLabel={t('View mode')}
-          />
         </div>
       </div>
 
@@ -274,7 +341,9 @@ export function PricingToolbar(props: PricingToolbarProps) {
           <SheetHeader className='border-b px-4 py-3 sm:px-6 sm:py-4'>
             <SheetTitle>{t('Filter')}</SheetTitle>
             <SheetDescription>
-              {t('Filter models by provider, group, type, endpoint, and tags.')}
+              {t(
+                'Filter models by input method, context length, provider, group, endpoint, and tags.'
+              )}
             </SheetDescription>
           </SheetHeader>
           <div className='flex-1 overflow-y-auto p-3 sm:p-4'>
@@ -294,6 +363,11 @@ export function PricingToolbar(props: PricingToolbarProps) {
               groupRatios={props.groupRatios}
               tags={props.tags}
               models={props.models}
+              metadataByName={props.metadataByName}
+              selectedModalities={props.selectedModalities}
+              onModalityToggle={props.onModalityToggle}
+              contextMinFilter={props.contextMinFilter}
+              onContextMinChange={props.onContextMinChange}
               hasActiveFilters={props.hasActiveFilters}
               onClearFilters={props.onClearFilters}
               className='border-0 bg-transparent p-0 shadow-none'

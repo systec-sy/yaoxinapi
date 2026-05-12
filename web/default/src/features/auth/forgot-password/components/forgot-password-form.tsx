@@ -20,7 +20,7 @@ import { useState } from 'react'
 import type { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight, Loader2, Mail } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -42,6 +42,11 @@ import {
   PASSWORD_RESET_COUNTDOWN,
 } from '@/features/auth/constants'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
+import {
+  authFieldLabelClassName,
+  authGradientSubmitButtonClassName,
+  authLeadingIconInputClassName,
+} from '@/features/auth/lib/auth-field-classes'
 
 export function ForgotPasswordForm({
   className,
@@ -90,7 +95,7 @@ export function ForgotPasswordForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-2', className)}
+        className={cn('grid gap-6', className)}
         {...props}
       >
         <FormField
@@ -98,18 +103,43 @@ export function ForgotPasswordForm({
           name='email'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel className={authFieldLabelClassName}>
+                {t('Email')}
+              </FormLabel>
               <FormControl>
-                <Input placeholder='name@example.com' {...field} />
+                <div className='relative'>
+                  <Mail
+                    className='pointer-events-none absolute left-3 top-1/2 z-10 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-gray-400'
+                    aria-hidden='true'
+                  />
+                  <Input
+                    placeholder={t('name@example.com')}
+                    className={authLeadingIconInputClassName}
+                    type='email'
+                    autoComplete='email'
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button className='mt-2' disabled={isLoading || isActive}>
-          {isActive ? `Resend (${secondsLeft}s)` : 'Send reset email'}
-          {isLoading ? <Loader2 className='animate-spin' /> : <ArrowRight />}
+        <Button
+          variant='default'
+          type='submit'
+          disabled={isLoading || isActive}
+          className={cn(authGradientSubmitButtonClassName, 'mt-1')}
+        >
+          {isLoading ? (
+            <Loader2 className='h-5 w-5 animate-spin' />
+          ) : (
+            <ArrowRight className='h-5 w-5' aria-hidden />
+          )}
+          {isActive
+            ? t('Resend ({{seconds}}s)', { seconds: secondsLeft })
+            : t('Send reset email')}
         </Button>
 
         {isTurnstileEnabled && (

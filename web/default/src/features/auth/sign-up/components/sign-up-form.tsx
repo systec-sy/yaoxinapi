@@ -20,7 +20,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { ArrowRight, Loader2, Lock, Mail, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -53,6 +53,13 @@ import { registerFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useEmailVerification } from '@/features/auth/hooks/use-email-verification'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
+import {
+  authBareTextInputClassName,
+  authFieldLabelClassName,
+  authGradientSubmitButtonClassName,
+  authLeadingIconInputClassName,
+  authPasswordInputWrapperClassName,
+} from '@/features/auth/lib/auth-field-classes'
 import { getAffiliateCode } from '@/features/auth/lib/storage'
 
 export function SignUpForm({
@@ -161,7 +168,7 @@ export function SignUpForm({
 
       if (res?.success) {
         toast.success(t('Account created! Please sign in'))
-        redirectToLogin()
+        redirectToLogin('/keys')
       }
     } catch (_error) {
       // Errors are handled by global interceptor
@@ -218,7 +225,7 @@ export function SignUpForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-4', className)}
+        className={cn('grid gap-6', className)}
         {...props}
       >
         {/* Username Field */}
@@ -227,9 +234,22 @@ export function SignUpForm({
           name='username'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('Username')}</FormLabel>
+              <FormLabel className={authFieldLabelClassName}>
+                {t('Username')}
+              </FormLabel>
               <FormControl>
-                <Input placeholder={t('Enter your username')} {...field} />
+                <div className='relative'>
+                  <UserRound
+                    className='pointer-events-none absolute left-3 top-1/2 z-10 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-gray-400'
+                    aria-hidden='true'
+                  />
+                  <Input
+                    placeholder={t('Enter your username')}
+                    className={authLeadingIconInputClassName}
+                    autoComplete='username'
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -242,12 +262,22 @@ export function SignUpForm({
           name='password'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('Password')}</FormLabel>
+              <FormLabel className={authFieldLabelClassName}>
+                {t('Password')}
+              </FormLabel>
               <FormControl>
-                <PasswordInput
-                  placeholder={t('Enter password (8-20 characters)')}
-                  {...field}
-                />
+                <div className='relative'>
+                  <Lock
+                    className='pointer-events-none absolute left-3 top-1/2 z-10 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-gray-400'
+                    aria-hidden='true'
+                  />
+                  <PasswordInput
+                    placeholder={t('Enter password (8-20 characters)')}
+                    className={authPasswordInputWrapperClassName}
+                    autoComplete='new-password'
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -260,9 +290,22 @@ export function SignUpForm({
           name='confirmPassword'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('Confirm password')}</FormLabel>
+              <FormLabel className={authFieldLabelClassName}>
+                {t('Confirm password')}
+              </FormLabel>
               <FormControl>
-                <PasswordInput placeholder={t('Confirm password')} {...field} />
+                <div className='relative'>
+                  <Lock
+                    className='pointer-events-none absolute left-3 top-1/2 z-10 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-gray-400'
+                    aria-hidden='true'
+                  />
+                  <PasswordInput
+                    placeholder={t('Confirm password')}
+                    className={authPasswordInputWrapperClassName}
+                    autoComplete='new-password'
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -278,15 +321,23 @@ export function SignUpForm({
               name='email'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
+                  <FormLabel className={authFieldLabelClassName}>
                     {t('Email (required for verification)')}
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder={t('name@example.com')}
-                      type='email'
-                      {...field}
-                    />
+                    <div className='relative'>
+                      <Mail
+                        className='pointer-events-none absolute left-3 top-1/2 z-10 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-gray-400'
+                        aria-hidden='true'
+                      />
+                      <Input
+                        placeholder={t('name@example.com')}
+                        type='email'
+                        className={authLeadingIconInputClassName}
+                        autoComplete='email'
+                        {...field}
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -294,17 +345,27 @@ export function SignUpForm({
             />
 
             {/* Verification Code Field */}
-            <div className='flex items-end gap-2'>
-              <div className='flex-1'>
+            <div className='flex flex-col gap-3 sm:flex-row sm:items-end'>
+              <div className='min-w-0 flex-1 space-y-2'>
+                <Label
+                  htmlFor='sign-up-verify-code'
+                  className={authFieldLabelClassName}
+                >
+                  {t('Verification code')}
+                </Label>
                 <Input
+                  id='sign-up-verify-code'
                   placeholder={t('Verification code')}
+                  className={authBareTextInputClassName}
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
+                  autoComplete='one-time-code'
                 />
               </div>
               <Button
                 variant='outline'
                 type='button'
+                className='h-11 shrink-0 rounded-lg border-gray-200 bg-white hover:bg-gray-50 dark:border-border dark:bg-transparent dark:hover:bg-muted/40'
                 disabled={isLoading || isSendingCode || isActive || !emailValue}
                 onClick={handleSendVerificationCode}
               >
@@ -340,10 +401,15 @@ export function SignUpForm({
         {/* Submit Button */}
         <Button
           type='submit'
-          className='mt-2 w-full justify-center gap-2'
+          variant='default'
+          className={cn(authGradientSubmitButtonClassName, 'mt-1')}
           disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
         >
-          {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
+          {isLoading ? (
+            <Loader2 className='h-5 w-5 animate-spin' />
+          ) : (
+            <ArrowRight className='h-5 w-5' aria-hidden />
+          )}
           {t('Create account')}
         </Button>
 

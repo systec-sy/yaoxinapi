@@ -39,6 +39,10 @@ interface TableSkeletonProps<TData> {
   rowCount?: number
   rowHeight?: string
   keyPrefix?: string
+  /** Replaces default `border-b` on skeleton rows (e.g. `border-0` for borderless tables). */
+  tableRowClassName?: string
+  /** Merged with default cell padding (default `py-3`). */
+  cellClassName?: string
 }
 
 export function TableSkeleton<TData>({
@@ -46,6 +50,8 @@ export function TableSkeleton<TData>({
   rowCount,
   rowHeight = 'h-[52px]',
   keyPrefix = 'skeleton',
+  tableRowClassName,
+  cellClassName,
 }: TableSkeletonProps<TData>) {
   const visibleColumns = table.getVisibleLeafColumns()
 
@@ -57,7 +63,7 @@ export function TableSkeleton<TData>({
       {Array.from({ length: finalRowCount }, (_, rowIndex) => (
         <TableRow
           key={`${keyPrefix}-${rowIndex}`}
-          className={cn(rowHeight, 'border-b')}
+          className={cn(rowHeight, tableRowClassName ?? 'border-b')}
         >
           {visibleColumns.map((column, colIndex) => {
             const isSelectColumn = column.id === 'select'
@@ -66,7 +72,7 @@ export function TableSkeleton<TData>({
               SKELETON_WIDTHS.length
 
             return (
-              <TableCell key={column.id} className='py-3'>
+              <TableCell key={column.id} className={cn('py-3', cellClassName)}>
                 <Skeleton
                   className={cn(
                     'h-4 rounded-sm',

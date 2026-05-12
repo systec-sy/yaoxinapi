@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { type TFunction } from 'i18next'
-import type { TokenUnit } from './types'
+import type { Modality, TokenUnit } from './types'
 
 // ----------------------------------------------------------------------------
 // Pricing Constants
@@ -142,3 +142,80 @@ export type ViewMode = (typeof VIEW_MODES)[keyof typeof VIEW_MODES]
 
 /** Default page size for pricing table */
 export const DEFAULT_PRICING_PAGE_SIZE = 20
+
+/** Minimum context (tokens) filters — uses inferred context_length */
+export const CONTEXT_MIN_FILTERS = {
+  ALL: 'all',
+  CTX_4K: '4k',
+  CTX_8K: '8k',
+  CTX_32K: '32k',
+  CTX_64K: '64k',
+  CTX_128K: '128k',
+  CTX_200K: '200k',
+  CTX_1M: '1m',
+} as const
+
+export type ContextMinFilterKey =
+  (typeof CONTEXT_MIN_FILTERS)[keyof typeof CONTEXT_MIN_FILTERS]
+
+export const CONTEXT_MIN_TOKEN_BY_KEY: Record<
+  Exclude<ContextMinFilterKey, typeof CONTEXT_MIN_FILTERS.ALL>,
+  number
+> = {
+  [CONTEXT_MIN_FILTERS.CTX_4K]: 4_000,
+  [CONTEXT_MIN_FILTERS.CTX_8K]: 8_000,
+  [CONTEXT_MIN_FILTERS.CTX_32K]: 32_000,
+  [CONTEXT_MIN_FILTERS.CTX_64K]: 64_000,
+  [CONTEXT_MIN_FILTERS.CTX_128K]: 128_000,
+  [CONTEXT_MIN_FILTERS.CTX_200K]: 200_000,
+  [CONTEXT_MIN_FILTERS.CTX_1M]: 1_000_000,
+}
+
+export const CONTEXT_MIN_FILTER_ORDER: ContextMinFilterKey[] = [
+  CONTEXT_MIN_FILTERS.ALL,
+  CONTEXT_MIN_FILTERS.CTX_4K,
+  CONTEXT_MIN_FILTERS.CTX_8K,
+  CONTEXT_MIN_FILTERS.CTX_32K,
+  CONTEXT_MIN_FILTERS.CTX_64K,
+  CONTEXT_MIN_FILTERS.CTX_128K,
+  CONTEXT_MIN_FILTERS.CTX_200K,
+  CONTEXT_MIN_FILTERS.CTX_1M,
+]
+
+/** Modalities in plaza sidebar filter (order preserved) */
+export const FILTER_MODALITIES: readonly Modality[] = [
+  'text',
+  'image',
+  'audio',
+  'video',
+  'file',
+] as const
+
+export function getContextMinLabels(
+  t: TFunction
+): Record<ContextMinFilterKey, string> {
+  return {
+    [CONTEXT_MIN_FILTERS.ALL]: t('Any context'),
+    [CONTEXT_MIN_FILTERS.CTX_4K]: t('≥ 4K context'),
+    [CONTEXT_MIN_FILTERS.CTX_8K]: t('≥ 8K context'),
+    [CONTEXT_MIN_FILTERS.CTX_32K]: t('≥ 32K context'),
+    [CONTEXT_MIN_FILTERS.CTX_64K]: t('≥ 64K context'),
+    [CONTEXT_MIN_FILTERS.CTX_128K]: t('≥ 128K context'),
+    [CONTEXT_MIN_FILTERS.CTX_200K]: t('≥ 200K context'),
+    [CONTEXT_MIN_FILTERS.CTX_1M]: t('≥ 1M context'),
+  }
+}
+
+export function getModalityFilterLabel(
+  t: TFunction,
+  modality: Modality
+): string {
+  const map: Record<Modality, string> = {
+    text: t('Text'),
+    image: t('Image'),
+    audio: t('Audio'),
+    video: t('Video'),
+    file: t('File'),
+  }
+  return map[modality]
+}

@@ -453,6 +453,98 @@ For commercial licensing, please contact support@quantumnous.com
   }
 }
 
+/* Auth layout — softly animated backdrop (waves, blobs, grid) */
+@keyframes auth-blob-1 {
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+    opacity: 1;
+  }
+  33% {
+    transform: translate(6%, -8%) scale(1.06);
+    opacity: 0.92;
+  }
+  66% {
+    transform: translate(-7%, 5%) scale(0.97);
+    opacity: 1;
+  }
+}
+
+@keyframes auth-blob-2 {
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(-8%, -4%) scale(1.05) rotate(3deg);
+    opacity: 0.88;
+  }
+  70% {
+    transform: translate(5%, 10%) scale(1.08) rotate(-2deg);
+    opacity: 0.96;
+  }
+}
+
+@keyframes auth-blob-3 {
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  50% {
+    transform: translate(12%, -12%) scale(1.12);
+  }
+}
+
+@keyframes auth-grid-drift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 32px 32px;
+  }
+}
+
+@keyframes auth-wave-shift {
+  0%,
+  100% {
+    transform: translateX(0%);
+  }
+  50% {
+    transform: translateX(-2.5%);
+  }
+}
+
+.animate-auth-blob-1 {
+  animation: auth-blob-1 26s ease-in-out infinite;
+}
+
+.animate-auth-blob-2 {
+  animation: auth-blob-2 32s ease-in-out infinite;
+}
+
+.animate-auth-blob-3 {
+  animation: auth-blob-3 20s ease-in-out infinite alternate;
+}
+
+.animate-auth-grid-drift {
+  animation: auth-grid-drift 32s linear infinite;
+}
+
+.animate-auth-wave-shift {
+  animation: auth-wave-shift 14s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-auth-blob-1,
+  .animate-auth-blob-2,
+  .animate-auth-blob-3,
+  .animate-auth-grid-drift,
+  .animate-auth-wave-shift {
+    animation: none !important;
+  }
+}
+
 /* Micro-interactions — Vercel-style subtle hover/active feedback */
 @media (prefers-reduced-motion: no-preference) {
   [data-slot='card'] {

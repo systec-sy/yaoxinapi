@@ -19,6 +19,8 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useStatus } from '@/hooks/use-status'
+import { useSystemConfig } from '@/hooks/use-system-config'
+import { DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import { AuthLayout } from '../auth-layout'
 import { TermsFooter } from '../components/terms-footer'
 import { UserAuthForm } from './components/user-auth-form'
@@ -27,24 +29,26 @@ export function SignIn() {
   const { t } = useTranslation()
   const { redirect } = useSearch({ from: '/(auth)/sign-in' })
   const { status } = useStatus()
+  const { systemName } = useSystemConfig()
 
   return (
     <AuthLayout>
-      <div className='w-full space-y-8'>
-        <div className='space-y-2'>
-          <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
-            {t('Sign in')}
+      <div className='w-full space-y-10'>
+        <div className='space-y-3 text-center'>
+          <h2 className='text-3xl font-bold tracking-tight text-gray-900 dark:text-foreground'>
+            {t('Sign in {{brand}}', {
+              brand: systemName.trim() || DEFAULT_SYSTEM_NAME,
+            })}
           </h2>
           {!status?.self_use_mode_enabled && (
-            <p className='text-muted-foreground text-left text-sm sm:text-base'>
+            <p className='text-sm text-gray-500 sm:text-base dark:text-muted-foreground'>
               {t("Don't have an account?")}{' '}
               <Link
                 to='/sign-up'
-                className='hover:text-primary font-medium underline underline-offset-4'
+                className='font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300'
               >
                 {t('Sign up')}
               </Link>
-              .
             </p>
           )}
         </div>

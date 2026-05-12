@@ -32,11 +32,18 @@ import {
   ENDPOINT_TYPES,
   FILTER_ALL,
   QUOTA_TYPES,
+  CONTEXT_MIN_FILTER_ORDER,
+  CONTEXT_MIN_FILTERS,
+  CONTEXT_MIN_TOKEN_BY_KEY,
+  FILTER_MODALITIES,
+  getContextMinLabels,
   getEndpointTypeLabels,
+  getModalityFilterLabel,
   getQuotaTypeLabels,
+  type ContextMinFilterKey,
 } from '../constants'
-import { parseTags } from '../lib/filters'
-import type { PricingModel, PricingVendor } from '../types'
+import type { ModelMetadata } from '../lib/model-metadata'
+import type { Modality, PricingModel, PricingVendor } from '../types'
 
 type FilterOption = {
   value: string
@@ -69,6 +76,11 @@ export interface PricingSidebarProps {
   groupRatios?: Record<string, number>
   tags: string[]
   models: PricingModel[]
+  metadataByName: Map<string, ModelMetadata>
+  selectedModalities: Modality[]
+  onModalityToggle: (m: Modality) => void
+  contextMinFilter: ContextMinFilterKey
+  onContextMinChange: (k: ContextMinFilterKey) => void
   hasActiveFilters: boolean
   onClearFilters: () => void
   className?: string
@@ -81,6 +93,7 @@ function countBy(
   return models.reduce((count, model) => count + (predicate(model) ? 1 : 0), 0)
 }
 
+/* Groups filter helpers — restore when Groups section is re-enabled.
 function formatGroupRatio(ratio: number | undefined): string | undefined {
   if (ratio == null) return undefined
   const formatted = Number.isInteger(ratio)
@@ -88,7 +101,82 @@ function formatGroupRatio(ratio: number | undefined): string | undefined {
     : ratio.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
   return `x${formatted}`
 }
+*/
 
+function modalityPredicate(
+  metaByName: Map<string, ModelMetadata>,
+  modality: Modality,
+  model: PricingModel
+): boolean {
+  const meta = metaByName.get(model.model_name)
+  if (!meta) return false
+  const union = new Set<Modality>([
+    ...meta.input_modalities,
+    ...meta.output_modalities,
+  ])
+  return union.has(modality)
+}
+
+function contextMinPredicate(
+  metaByName: Map<string, ModelMetadata>,
+  minTokens: number,
+  model: PricingModel
+): boolean {
+  const len = metaByName.get(model.model_name)?.context_length ?? 0
+  return len >= minTokens
+}
+
+function ModalityFilterSection(props: {
+  title: string
+  modalities: readonly Modality[]
+  selected: Modality[]
+  onToggle: (m: Modality) => void
+  models: PricingModel[]
+  metaByName: Map<string, ModelMetadata>
+  hint?: string
+}) {
+  const { t } = useTranslation()
+  return (
+    <Collapsible
+      defaultOpen
+      className='border-border/70 border-b pb-3 last:border-b-0'
+    >
+      <CollapsibleTrigger className='group flex w-full items-center justify-between py-2.5 text-left'>
+        <span className='text-foreground text-sm font-semibold'>
+          {props.title}
+        </span>
+        <ChevronDown className='text-muted-foreground size-4 transition-transform group-data-[panel-open]:rotate-180' />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        {props.hint ? (
+          <p className='text-muted-foreground mb-2 text-[11px] leading-snug'>
+            {props.hint}
+          </p>
+        ) : null}
+        <div className='grid grid-cols-2 gap-1.5'>
+          {props.modalities.map((modality) => {
+            const active = props.selected.includes(modality)
+            const count = countBy(props.models, (model) =>
+              modalityPredicate(props.metaByName, modality, model)
+            )
+            return (
+              <FilterChip
+                key={modality}
+                option={{
+                  value: modality,
+                  label: getModalityFilterLabel(t, modality),
+                  count,
+                }}
+                active={active}
+                onClick={() => props.onToggle(modality)}
+              />
+            )
+          })}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
 function FilterChip(props: {
   option: FilterOption
   active: boolean
@@ -99,21 +187,21 @@ function FilterChip(props: {
       type='button'
       onClick={props.onClick}
       className={cn(
-        'group inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-all',
+        'group flex min-w-0 w-full items-center justify-start gap-1.5 rounded-md border px-2 py-1 text-left text-xs font-medium transition-all',
         props.active
-          ? 'border-foreground/30 bg-foreground/5 text-foreground shadow-sm'
-          : 'border-border/70 bg-background text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground'
+          ? 'border-indigo-500/15 bg-indigo-500/10 text-foreground dark:border-indigo-400/30 dark:bg-indigo-400/8'
+          : 'border-border/70 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground'
       )}
       title={props.option.label}
     >
       {props.option.icon && (
         <span className='shrink-0'>{props.option.icon}</span>
       )}
-      <span className='truncate'>{props.option.label}</span>
+      <span className='min-w-0 flex-1 truncate'>{props.option.label}</span>
       {(props.option.suffix || props.option.count != null) && (
         <span
           className={cn(
-            'rounded-md px-1.5 py-0.5 text-[10px]',
+            'shrink-0 rounded-full px-1.5 py-0.5 text-[10px]',
             props.active
               ? 'bg-background text-foreground'
               : 'bg-muted text-muted-foreground'
@@ -139,7 +227,7 @@ function FilterSection(props: FilterSectionProps) {
         <ChevronDown className='text-muted-foreground size-4 transition-transform group-data-[panel-open]:rotate-180' />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className='flex flex-wrap gap-1.5'>
+        <div className='grid grid-cols-2 gap-1.5'>
           {props.options.map((option) => (
             <FilterChip
               key={option.value}
@@ -178,6 +266,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
       .filter((vendor) => vendor.count > 0),
   ]
 
+  /* Groups filter — hidden per product request; restore when needed.
   const groupOptions: FilterOption[] = [
     {
       value: FILTER_ALL,
@@ -189,6 +278,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
       suffix: formatGroupRatio(props.groupRatios?.[group]),
     })),
   ]
+  */
 
   const quotaOptions: FilterOption[] = [
     {
@@ -208,6 +298,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
     },
   ]
 
+  /* Model Tags filter — hidden per product request; restore when needed.
   const tagOptions: FilterOption[] = [
     {
       value: FILTER_ALL,
@@ -224,6 +315,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
       ),
     })),
   ]
+  */
 
   const endpointOptions: FilterOption[] = [
     {
@@ -243,65 +335,114 @@ export function PricingSidebar(props: PricingSidebarProps) {
       })),
   ]
 
+  const contextMinLabels = getContextMinLabels(t)
+  const contextOptions: FilterOption[] = CONTEXT_MIN_FILTER_ORDER.map(
+    (key) => ({
+      value: key,
+      label: contextMinLabels[key],
+      count:
+        key === CONTEXT_MIN_FILTERS.ALL
+          ? props.models.length
+          : countBy(props.models, (model) =>
+              contextMinPredicate(
+                props.metadataByName,
+                CONTEXT_MIN_TOKEN_BY_KEY[key],
+                model
+              )
+            ),
+    })
+  )
+
   return (
-    <aside className={cn('rounded-xl border p-3', props.className)}>
-      <div className='mb-2.5 flex items-center justify-between gap-2'>
-        <div>
-          <h2 className='text-foreground text-sm font-bold'>{t('Filter')}</h2>
-          <p className='text-muted-foreground mt-1 text-xs'>
-            {t('Refine models by provider, group, type, and tags.')}
-          </p>
+    <aside
+      className={cn(
+        'text-foreground flex h-full min-h-0 flex-col border-0 border-r border-border/50 bg-[#fafbfd] py-3 pl-3 pr-0 dark:border-border/70 dark:bg-background',
+        props.className
+      )}
+    >
+      <div className='mb-2.5 shrink-0 pr-3'>
+        <div className='flex items-start justify-between gap-2'>
+          <div className='min-w-0'>
+            <h2 className='text-foreground text-sm font-bold'>{t('Filter')}</h2>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              {t(
+                'Refine models by input method, context length, provider, pricing type, and endpoint type.'
+              )}
+            </p>
+          </div>
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            onClick={props.onClearFilters}
+            disabled={!props.hasActiveFilters}
+            className='h-7 shrink-0 gap-1.5 px-2 text-xs'
+          >
+            <RotateCcw className='size-3.5' />
+            {t('Reset')}
+          </Button>
         </div>
-        <Button
-          type='button'
-          variant='ghost'
-          size='sm'
-          onClick={props.onClearFilters}
-          disabled={!props.hasActiveFilters}
-          className='h-7 gap-1.5 px-2 text-xs'
-        >
-          <RotateCcw className='size-3.5' />
-          {t('Reset')}
-        </Button>
+
+        {props.hasActiveFilters ? (
+          <Badge variant='secondary' className='mt-3'>
+            {t('Filters active')}
+          </Badge>
+        ) : null}
       </div>
 
-      {props.hasActiveFilters && (
-        <Badge variant='secondary' className='mb-3'>
-          {t('Filters active')}
-        </Badge>
-      )}
-
-      <div className='space-y-1'>
-        <FilterSection
-          title={t('Groups')}
-          value={props.groupFilter}
-          options={groupOptions}
-          onChange={props.onGroupChange}
-        />
-        <FilterSection
-          title={t('All Vendors')}
-          value={props.vendorFilter}
-          options={vendorOptions}
-          onChange={props.onVendorChange}
-        />
-        <FilterSection
-          title={t('Model Tags')}
-          value={props.tagFilter}
-          options={tagOptions}
-          onChange={props.onTagChange}
-        />
-        <FilterSection
-          title={t('Pricing Type')}
-          value={props.quotaTypeFilter}
-          options={quotaOptions}
-          onChange={props.onQuotaTypeChange}
-        />
-        <FilterSection
-          title={t('Endpoint Type')}
-          value={props.endpointTypeFilter}
-          options={endpointOptions}
-          onChange={props.onEndpointTypeChange}
-        />
+      <div className='hover-scrollbar min-h-0 flex-1 overflow-y-auto'>
+        <div className='space-y-1 pr-3'>
+          <ModalityFilterSection
+            title={t('Input method')}
+            modalities={FILTER_MODALITIES}
+            selected={props.selectedModalities}
+            onToggle={props.onModalityToggle}
+            models={props.models}
+            metaByName={props.metadataByName}
+          />
+          <FilterSection
+            title={t('Context length')}
+            value={props.contextMinFilter}
+            options={contextOptions}
+            onChange={(v) =>
+              props.onContextMinChange(v as ContextMinFilterKey)
+            }
+          />
+          {/* Groups filter — hidden per product request; restore when needed.
+          <FilterSection
+            title={t('Groups')}
+            value={props.groupFilter}
+            options={groupOptions}
+            onChange={props.onGroupChange}
+          />
+          */}
+          <FilterSection
+            title={t('Vendor')}
+            value={props.vendorFilter}
+            options={vendorOptions}
+            onChange={props.onVendorChange}
+          />
+          {/* Model Tags filter — hidden per product request; restore when needed.
+          <FilterSection
+            title={t('Model Tags')}
+            value={props.tagFilter}
+            options={tagOptions}
+            onChange={props.onTagChange}
+          />
+          */}
+          <FilterSection
+            title={t('Pricing Type')}
+            value={props.quotaTypeFilter}
+            options={quotaOptions}
+            onChange={props.onQuotaTypeChange}
+          />
+          <FilterSection
+            title={t('Endpoint Type')}
+            value={props.endpointTypeFilter}
+            options={endpointOptions}
+            onChange={props.onEndpointTypeChange}
+          />
+        </div>
       </div>
     </aside>
   )

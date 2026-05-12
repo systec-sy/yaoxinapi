@@ -25,10 +25,18 @@ import {
   ENDPOINT_TYPES,
   DEFAULT_TOKEN_UNIT,
   VIEW_MODES,
+  CONTEXT_MIN_FILTERS,
+  type ContextMinFilterKey,
   type ViewMode,
 } from '../constants'
-import { filterAndSortModels, extractAllTags } from '../lib/filters'
-import type { PricingModel, TokenUnit } from '../types'
+import {
+  buildModelMetadataMap,
+  extractAllTags,
+  filterAndSortModels,
+  parseModalitiesParam,
+  serializeModalitiesParam,
+} from '../lib/filters'
+import type { Modality, PricingModel, TokenUnit } from '../types'
 
 type FilterState = {
   search?: string
@@ -41,6 +49,8 @@ type FilterState = {
   tokenUnit?: TokenUnit
   view?: ViewMode
   rechargePrice?: boolean
+  modalities?: string
+  contextMin?: ContextMinFilterKey
 }
 
 function normalizeViewMode(value: unknown): ViewMode {
@@ -63,6 +73,8 @@ export function useFilters(models: PricingModel[]) {
     tokenUnit: search.tokenUnit,
     view: search.view,
     rechargePrice: search.rechargePrice,
+    modalities: search.modalities,
+    contextMin: search.contextMin,
   }))
 
   const searchInput = filterState.search || ''
@@ -76,6 +88,14 @@ export function useFilters(models: PricingModel[]) {
     filterState.tokenUnit === 'K' ? 'K' : DEFAULT_TOKEN_UNIT
   const viewMode = normalizeViewMode(filterState.view)
   const showRechargePrice = filterState.rechargePrice === true
+
+  const selectedModalities = useMemo(
+    () => parseModalitiesParam(filterState.modalities),
+    [filterState.modalities]
+  )
+
+  const contextMinFilter: ContextMinFilterKey =
+    filterState.contextMin ?? CONTEXT_MIN_FILTERS.ALL
 
   const updateFilters = useCallback((updates: Record<string, unknown>) => {
     setFilterState((prev) => {
@@ -137,23 +157,62 @@ export function useFilters(models: PricingModel[]) {
     [updateFilters]
   )
 
+  const toggleModalityFilter = useCallback(
+    (mod: Modality) => {
+      const current = parseModalitiesParam(filterState.modalities)
+      const set = new Set(current)
+      if (set.has(mod)) {
+        set.delete(mod)
+      } else {
+        set.add(mod)
+      }
+      const next = Array.from(set) as Modality[]
+      updateFilters({
+        modalities: serializeModalitiesParam(next),
+      })
+    },
+    [filterState.modalities, updateFilters]
+  )
+
+  const setContextMinFilter = useCallback(
+    (key: ContextMinFilterKey) =>
+      updateFilters({
+        contextMin:
+          key === CONTEXT_MIN_FILTERS.ALL ? undefined : key,
+      }),
+    [updateFilters]
+  )
+
   const availableTags = useMemo(() => {
     if (!models || models.length === 0) return []
     return extractAllTags(models)
   }, [models])
 
+  const metadataByName = useMemo(
+    () => buildModelMetadataMap(models || []),
+    [models]
+  )
+
   const filteredModels = useMemo(() => {
     if (!models || models.length === 0) return []
 
-    return filterAndSortModels(models, {
-      search: searchInput,
-      vendor: vendorFilter,
-      group: groupFilter,
-      quotaType: quotaTypeFilter,
-      endpointType: endpointTypeFilter,
-      tag: tagFilter,
-      sortBy,
-    })
+    return filterAndSortModels(
+      models,
+      {
+        search: searchInput,
+        vendor: vendorFilter,
+        group: groupFilter,
+        quotaType: quotaTypeFilter,
+        endpointType: endpointTypeFilter,
+        tag: tagFilter,
+        sortBy,
+      },
+      {
+        metaByName: metadataByName,
+        modalities: selectedModalities,
+        contextMinKey: contextMinFilter,
+      }
+    )
   }, [
     models,
     searchInput,
@@ -163,7 +222,14 @@ export function useFilters(models: PricingModel[]) {
     endpointTypeFilter,
     tagFilter,
     sortBy,
+    metadataByName,
+    selectedModalities,
+    contextMinFilter,
   ])
+
+  const metaFiltersActive =
+    selectedModalities.length > 0 ||
+    contextMinFilter !== CONTEXT_MIN_FILTERS.ALL
 
   const hasActiveFilters = useMemo(
     () =>
@@ -171,8 +237,16 @@ export function useFilters(models: PricingModel[]) {
       groupFilter !== FILTER_ALL ||
       quotaTypeFilter !== QUOTA_TYPES.ALL ||
       endpointTypeFilter !== ENDPOINT_TYPES.ALL ||
-      tagFilter !== FILTER_ALL,
-    [vendorFilter, groupFilter, quotaTypeFilter, endpointTypeFilter, tagFilter]
+      tagFilter !== FILTER_ALL ||
+      metaFiltersActive,
+    [
+      vendorFilter,
+      groupFilter,
+      quotaTypeFilter,
+      endpointTypeFilter,
+      tagFilter,
+      metaFiltersActive,
+    ]
   )
 
   const activeFilterCount = useMemo(
@@ -181,8 +255,18 @@ export function useFilters(models: PricingModel[]) {
       (groupFilter !== FILTER_ALL ? 1 : 0) +
       (quotaTypeFilter !== QUOTA_TYPES.ALL ? 1 : 0) +
       (endpointTypeFilter !== ENDPOINT_TYPES.ALL ? 1 : 0) +
-      (tagFilter !== FILTER_ALL ? 1 : 0),
-    [vendorFilter, groupFilter, quotaTypeFilter, endpointTypeFilter, tagFilter]
+      (tagFilter !== FILTER_ALL ? 1 : 0) +
+      (selectedModalities.length > 0 ? 1 : 0) +
+      (contextMinFilter !== CONTEXT_MIN_FILTERS.ALL ? 1 : 0),
+    [
+      vendorFilter,
+      groupFilter,
+      quotaTypeFilter,
+      endpointTypeFilter,
+      tagFilter,
+      selectedModalities.length,
+      contextMinFilter,
+    ]
   )
 
   const clearFilters = useCallback(() => {
@@ -192,6 +276,8 @@ export function useFilters(models: PricingModel[]) {
       quotaType: undefined,
       endpointType: undefined,
       tag: undefined,
+      modalities: undefined,
+      contextMin: undefined,
     })
   }, [updateFilters])
 
@@ -210,6 +296,9 @@ export function useFilters(models: PricingModel[]) {
     tokenUnit,
     viewMode,
     showRechargePrice,
+    selectedModalities,
+    contextMinFilter,
+    metadataByName,
     setSearchInput,
     setSortBy,
     setVendorFilter,
@@ -220,6 +309,8 @@ export function useFilters(models: PricingModel[]) {
     setTokenUnit,
     setViewMode,
     setShowRechargePrice,
+    toggleModalityFilter,
+    setContextMinFilter,
     filteredModels,
     hasActiveFilters,
     activeFilterCount,

@@ -64,6 +64,11 @@ type DynamicPricingBreakdownProps = {
    * call they are inspecting. Defaults to false (show all configured prices).
    */
   hideCacheColumns?: boolean
+  /**
+   * Model-square style: show tier coefficients with ¥ or $ only (rate = 1).
+   * When omitted, use global quota display currency / exchange behaviour.
+   */
+  listPricingDomestic?: boolean
 }
 
 const VAR_LABELS: Record<string, string> = {
@@ -157,12 +162,19 @@ export function DynamicPricingBreakdown({
   billingExpr,
   matchedTierLabel,
   hideCacheColumns = false,
+  listPricingDomestic,
 }: DynamicPricingBreakdownProps) {
   const { t } = useTranslation()
   const expr = billingExpr || ''
   const currency = useSystemConfigStore((s) => s.config.currency)
 
   const { symbol, rate } = useMemo(() => {
+    if (listPricingDomestic === true) {
+      return { symbol: '¥', rate: 1 }
+    }
+    if (listPricingDomestic === false) {
+      return { symbol: '$', rate: 1 }
+    }
     if (currency.quotaDisplayType === 'CNY') {
       return { symbol: '¥', rate: currency.usdExchangeRate || 7 }
     }
@@ -173,7 +185,7 @@ export function DynamicPricingBreakdown({
       }
     }
     return { symbol: '$', rate: 1 }
-  }, [currency])
+  }, [currency, listPricingDomestic])
 
   const { tiers, ruleGroups } = useMemo(() => {
     const split = splitBillingExprAndRequestRules(expr)

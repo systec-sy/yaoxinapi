@@ -18,12 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { FcGoogle } from 'react-icons/fc'
 import {
-  IconDiscord,
-  IconGithub,
-  IconLinuxDo,
-  IconWeChat,
-} from '@/assets/brand-icons'
+  SiDiscord,
+  SiGitea,
+  SiGithub,
+  SiGitlab,
+  SiGmail,
+  SiTelegram,
+} from 'react-icons/si'
+import { IconLinuxDo, IconWeChat } from '@/assets/brand-icons'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useOAuthLogin } from '../hooks/use-oauth-login'
@@ -43,6 +47,98 @@ type ProviderButton = {
   onClick: () => void
   icon?: ReactNode
   disabled?: boolean
+}
+
+const iconWrap = 'inline-flex shrink-0 items-center justify-center'
+
+function GoogleColorIcon() {
+  return (
+    <span className={cn(iconWrap, 'h-5 w-5')} aria-hidden>
+      <FcGoogle className='h-full w-full' />
+    </span>
+  )
+}
+
+function GitHubColorIcon() {
+  return (
+    <span
+      className={cn(iconWrap, 'text-[#181717] dark:text-white')}
+      aria-hidden
+    >
+      <SiGithub className='h-[18px] w-[18px]' />
+    </span>
+  )
+}
+
+function DiscordColorIcon() {
+  return (
+    <span className={cn(iconWrap, 'text-[#5865F2]')} aria-hidden>
+      <SiDiscord className='h-[18px] w-[18px]' />
+    </span>
+  )
+}
+
+function GitLabColorIcon() {
+  return (
+    <span className={cn(iconWrap, 'text-[#FC6D26]')} aria-hidden>
+      <SiGitlab className='h-[18px] w-[18px]' />
+    </span>
+  )
+}
+
+function GiteaColorIcon() {
+  return (
+    <span className={cn(iconWrap, 'text-[#609926]')} aria-hidden>
+      <SiGitea className='h-[18px] w-[18px]' />
+    </span>
+  )
+}
+
+function GmailColorIcon() {
+  return (
+    <span className={cn(iconWrap, 'text-[#EA4335]')} aria-hidden>
+      <SiGmail className='h-[18px] w-[18px]' />
+    </span>
+  )
+}
+
+function WeChatColorIcon() {
+  return (
+    <span className={cn(iconWrap, 'text-[#07C160]')} aria-hidden>
+      <IconWeChat className='h-[18px] w-[18px]' />
+    </span>
+  )
+}
+
+function TelegramColorIcon() {
+  return (
+    <span className={cn(iconWrap, 'text-[#26A5E4]')} aria-hidden>
+      <SiTelegram className='h-[18px] w-[18px]' />
+    </span>
+  )
+}
+
+function customOAuthButtonIcon(
+  icon: string | undefined,
+  slug: string
+): ReactNode | undefined {
+  const key = (icon?.trim() || slug.trim()).toLowerCase()
+  switch (key) {
+    case 'google':
+      return <GoogleColorIcon />
+    case 'gmail':
+      return <GmailColorIcon />
+    case 'github':
+      return <GitHubColorIcon />
+    case 'gitlab':
+      return <GitLabColorIcon />
+    case 'gitea':
+      return <GiteaColorIcon />
+    case 'discord':
+      return <DiscordColorIcon />
+    default:
+      return undefined
+  }
 }
 
 export function OAuthProviders({
@@ -72,7 +168,7 @@ export function OAuthProviders({
       key: 'wechat',
       label: t('Continue with WeChat'),
       onClick: onWeChatLogin,
-      icon: <IconWeChat className='h-4 w-4' />,
+      icon: <WeChatColorIcon />,
       disabled: isWeChatLoading,
     })
   }
@@ -82,7 +178,7 @@ export function OAuthProviders({
       key: 'github',
       label: githubButtonText || t('Continue with GitHub'),
       onClick: handleGitHubLogin,
-      icon: <IconGithub className='h-4 w-4' />,
+      icon: <GitHubColorIcon />,
       disabled: githubButtonDisabled,
     })
   }
@@ -92,7 +188,7 @@ export function OAuthProviders({
       key: 'discord',
       label: t('Continue with Discord'),
       onClick: handleDiscordLogin,
-      icon: <IconDiscord className='h-4 w-4' />,
+      icon: <DiscordColorIcon />,
     })
   }
 
@@ -109,7 +205,11 @@ export function OAuthProviders({
       key: 'linuxdo',
       label: t('Continue with LinuxDO'),
       onClick: handleLinuxDOLogin,
-      icon: <IconLinuxDo className='h-4 w-4' />,
+      icon: (
+        <span className={cn(iconWrap, 'h-[18px] w-[18px]')} aria-hidden>
+          <IconLinuxDo className='h-full w-full' />
+        </span>
+      ),
     })
   }
 
@@ -118,6 +218,7 @@ export function OAuthProviders({
       key: 'telegram',
       label: t('Continue with Telegram'),
       onClick: handleTelegramLogin,
+      icon: <TelegramColorIcon />,
     })
   }
 
@@ -129,6 +230,7 @@ export function OAuthProviders({
         key: `custom-${provider.slug}`,
         label: t('Continue with {{name}}', { name: provider.name }),
         onClick: () => handleCustomOAuthLogin(provider),
+        icon: customOAuthButtonIcon(provider.icon, provider.slug),
       })
     }
   }
@@ -136,19 +238,19 @@ export function OAuthProviders({
   if (providerButtons.length === 0) return null
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('space-y-4', className)}>
       <div className='relative'>
         <div className='absolute inset-0 flex items-center'>
-          <span className='w-full border-t' />
+          <span className='w-full border-t border-gray-200 dark:border-border' />
         </div>
-        <div className='relative flex justify-center text-xs uppercase'>
-          <span className='bg-background text-muted-foreground px-2'>
+        <div className='relative flex justify-center text-sm'>
+          <span className='bg-white px-3 text-gray-500 dark:bg-card dark:text-muted-foreground'>
             {t('Or continue with')}
           </span>
         </div>
       </div>
 
-      <div className='flex flex-col gap-2'>
+      <div className='flex flex-col gap-3'>
         {providerButtons.map(
           ({ key, label, onClick, icon, disabled: extraDisabled }) => (
             <Button
@@ -157,7 +259,7 @@ export function OAuthProviders({
               type='button'
               disabled={disabled || isLoading || extraDisabled}
               onClick={onClick}
-              className='h-11 w-full justify-center gap-2 rounded-lg'
+              className='h-11 w-full justify-center gap-2 rounded-lg border-gray-200 bg-white font-medium text-gray-800 shadow-none hover:bg-gray-50 dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-muted/50'
             >
               {icon}
               {label}

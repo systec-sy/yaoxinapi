@@ -21,7 +21,7 @@ import type { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
-import { Loader2, LogIn, KeyRound } from 'lucide-react'
+import { ArrowRight, KeyRound, Loader2, Lock, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import {
@@ -58,6 +58,12 @@ import { OAuthProviders } from '@/features/auth/components/oauth-providers'
 import { loginFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
+import {
+  authFieldLabelClassName,
+  authGradientSubmitButtonClassName,
+  authLeadingIconInputClassName,
+  authPasswordInputWrapperClassName,
+} from '@/features/auth/lib/auth-field-classes'
 import { beginPasskeyLogin, finishPasskeyLogin } from '@/features/auth/passkey'
 import type { AuthFormProps } from '@/features/auth/types'
 
@@ -279,7 +285,7 @@ export function UserAuthForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-4', className)}
+        className={cn('grid gap-6', className)}
         {...props}
       >
         {/* Username Field */}
@@ -288,12 +294,22 @@ export function UserAuthForm({
           name='username'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('Username or Email')}</FormLabel>
+              <FormLabel className={authFieldLabelClassName}>
+                {t('Username or Email')}
+              </FormLabel>
               <FormControl>
-                <Input
-                  placeholder={t('Enter your username or email')}
-                  {...field}
-                />
+                <div className='relative'>
+                  <UserRound
+                    className='pointer-events-none absolute left-3 top-1/2 z-10 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-gray-400'
+                    aria-hidden='true'
+                  />
+                  <Input
+                    placeholder={t('Enter your username or email')}
+                    className={authLeadingIconInputClassName}
+                    autoComplete='username'
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -305,18 +321,33 @@ export function UserAuthForm({
           control={form.control}
           name='password'
           render={({ field }) => (
-            <FormItem className='relative'>
-              <FormLabel>{t('Password')}</FormLabel>
+            <FormItem>
+              <div className='flex items-center justify-between gap-3'>
+                <FormLabel className={authFieldLabelClassName}>
+                  {t('Password')}
+                </FormLabel>
+                <Link
+                  to='/forgot-password'
+                  className='shrink-0 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300'
+                >
+                  {t('Forgot password?')}
+                </Link>
+              </div>
               <FormControl>
-                <PasswordInput placeholder={t('Enter password')} {...field} />
+                <div className='relative'>
+                  <Lock
+                    className='pointer-events-none absolute left-3 top-1/2 z-10 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-gray-400'
+                    aria-hidden='true'
+                  />
+                  <PasswordInput
+                    placeholder={t('Enter password')}
+                    className={authPasswordInputWrapperClassName}
+                    autoComplete='current-password'
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
-              <Link
-                to='/forgot-password'
-                className='text-muted-foreground absolute end-0 -top-0.5 text-sm font-medium hover:opacity-75'
-              >
-                {t('Forgot password?')}
-              </Link>
             </FormItem>
           )}
         />
@@ -324,10 +355,15 @@ export function UserAuthForm({
         {/* Submit Button */}
         <Button
           type='submit'
-          className='mt-2 w-full justify-center gap-2'
+          variant='default'
+          className={cn(authGradientSubmitButtonClassName, 'mt-1')}
           disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
         >
-          {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
+          {isLoading ? (
+            <Loader2 className='animate-spin' />
+          ) : (
+            <ArrowRight className='h-5 w-5' aria-hidden='true' />
+          )}
           {t('Sign in')}
         </Button>
 

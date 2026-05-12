@@ -16,16 +16,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
 type HeaderProps = React.HTMLAttributes<HTMLElement>
 
 export function Header({ className, children, ...props }: HeaderProps) {
+  const [headerScrolled, setHeaderScrolled] = useState(false)
+
+  useEffect(() => {
+    const thresholdPx = 8
+    const onScroll = () => setHeaderScrolled(window.scrollY > thresholdPx)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 h-[var(--app-header-height,3rem)] w-full shrink-0 bg-transparent',
+        'sticky top-0 z-50 h-[var(--app-header-height,3rem)] min-h-[var(--app-header-height,3rem)] w-full shrink-0 transition-[background-color,backdrop-filter] duration-300 ease-out',
+        headerScrolled
+          ? 'border-border/25 bg-background/75 backdrop-blur-md border-b'
+          : 'border-transparent bg-transparent',
         className
       )}
       {...props}

@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { formatCurrencyFromUSD } from '@/lib/currency'
 import { QUOTA_TYPE_VALUES, TOKEN_UNIT_DIVISORS } from '../constants'
+import { isDomesticPricingModel } from './domestic-pricing-vendors'
+import { formatPricingCurrencyAmount } from './pricing-currency-display'
 import type { PricingModel, TokenUnit, PriceType } from '../types'
 
 // ----------------------------------------------------------------------------
@@ -127,25 +129,8 @@ function hasRatio(value: number | null | undefined): boolean {
  * priceRate represents how much users need to recharge (in the display currency)
  * to get 1 USD credit. usdExchangeRate is the real exchange rate.
  *
- * The returned value will be formatted by formatCurrencyFromUSD, which will
- * multiply by the display currency's exchange rate.
- *
- * Examples:
- *
- * 1. Display currency = USD:
- *    - Model: 1 USD
- *    - priceRate = 0.5 (recharge $0.5 to get $1 credit)
- *    - usdExchangeRate = 1
- *    - Return: 1 × 0.5 / 1 = 0.5
- *    - formatCurrencyFromUSD(0.5) → $0.5 ✓
- *
- * 2. Display currency = CNY:
- *    - Model: 1 USD
- *    - priceRate = 4 (recharge ¥4 to get $1 credit)
- *    - usdExchangeRate = 7 (real rate: 1 USD = ¥7)
- *    - Return: 1 × 4 / 7 = 0.571
- *    - formatCurrencyFromUSD(0.571) → 0.571 × 7 = ¥4 ✓
- *    - Normal price: ¥7, Recharge price: ¥4 (cheaper!)
+ * Pricing UI formats that scalar with ¥ (domestic vendors) or $ (foreign)
+ * without applying global quotaDisplayType FX conversion.
  */
 function applyRechargeRate(
   price: number,
@@ -187,7 +172,7 @@ export function formatPrice(
   )
 
   const price = priceInUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
-  return formatCurrencyFromUSD(price, {
+  return formatPricingCurrencyAmount(price, isDomesticPricingModel(model), {
     digitsLarge: 4,
     digitsSmall: 6,
     abbreviate: false,
@@ -222,7 +207,7 @@ export function formatGroupPrice(
   )
 
   const price = priceInUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
-  return formatCurrencyFromUSD(price, {
+  return formatPricingCurrencyAmount(price, isDomesticPricingModel(model), {
     digitsLarge: 4,
     digitsSmall: 6,
     abbreviate: false,
@@ -254,11 +239,15 @@ export function formatFixedPrice(
     usdExchangeRate
   )
 
-  return formatCurrencyFromUSD(priceInUSD, {
-    digitsLarge: 4,
-    digitsSmall: 4,
-    abbreviate: false,
-  })
+  return formatPricingCurrencyAmount(
+    priceInUSD,
+    isDomesticPricingModel(model),
+    {
+      digitsLarge: 4,
+      digitsSmall: 4,
+      abbreviate: false,
+    }
+  )
 }
 
 /**
@@ -289,9 +278,13 @@ export function formatRequestPrice(
     usdExchangeRate
   )
 
-  return formatCurrencyFromUSD(priceInUSD, {
-    digitsLarge: 4,
-    digitsSmall: 4,
-    abbreviate: false,
-  })
+  return formatPricingCurrencyAmount(
+    priceInUSD,
+    isDomesticPricingModel(model),
+    {
+      digitsLarge: 4,
+      digitsSmall: 4,
+      abbreviate: false,
+    }
+  )
 }

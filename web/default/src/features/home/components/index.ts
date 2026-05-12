@@ -16,8 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+export { HomeScrollToTop } from './home-scroll-to-top'
+export { GettingStartedSteps } from './sections/getting-started-steps'
+export { FeaturedAgents } from './sections/featured-agents'
+export { FeaturedModels } from './sections/featured-models'
 export { CTA } from './sections/cta'
 export { Features } from './sections/features'
 export { Hero } from './sections/hero'
 export { HowItWorks } from './sections/how-it-works'
+export { PlatformRoutingHighlights } from './sections/platform-routing-highlights'
 export { Stats } from './sections/stats'
+export { ValueCards } from './sections/value-cards'

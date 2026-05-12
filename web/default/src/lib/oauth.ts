@@ -51,7 +51,7 @@ export function buildDiscordOAuthUrl(clientId: string, state: string): string {
 export function buildOIDCOAuthUrl(
   authUrl: string,
   clientId: string,
-  state: string
+  state: string,
 ): string {
   const url = new URL(authUrl)
   url.searchParams.set('client_id', clientId)
@@ -59,6 +59,7 @@ export function buildOIDCOAuthUrl(
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('scope', 'openid profile email')
   url.searchParams.set('state', state)
+  url.searchParams.set('prompt', 'select_account')
   return url.toString()
 }
 
