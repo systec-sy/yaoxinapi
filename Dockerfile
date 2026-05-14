@@ -26,6 +26,14 @@ ARG TARGETARCH
 ENV GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64}
 ENV GOEXPERIMENT=greenteagc
 
+# 新增开始 Default tries CN-friendly proxy first, then proxy.golang.org (override: docker build --build-arg GOPROXY=...)
+ARG GOPROXY=https://goproxy.cn,https://proxy.golang.org,direct
+ENV GOPROXY=${GOPROXY}
+ARG GOSUMDB=sum.golang.google.cn
+ENV GOSUMDB=${GOSUMDB}
+
+# 新增结束
+
 WORKDIR /build
 
 ADD go.mod go.sum ./
