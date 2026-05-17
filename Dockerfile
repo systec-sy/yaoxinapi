@@ -51,8 +51,19 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
 
+# 复制 Go 二进制
 COPY --from=builder2 /build/new-api /
+
+# 【新增】复制前端构建产物（如果 new-api 需要读取它们）
+COPY --from=builder2 /build/web /web
+
+# 【新增】如果项目根目录还有其他运行时需要的文件（比如 config.yaml），一并复制
+# 假设你的程序可能读取根目录下的 config.yaml，可以取消下面这行的注释
+# COPY --from=builder2 /build/config.yaml /
+
+# 许可证文件
 COPY LICENSE NOTICE THIRD-PARTY-LICENSES.md /licenses/
+
 EXPOSE 3000
 WORKDIR /data
 ENTRYPOINT ["/new-api"]
